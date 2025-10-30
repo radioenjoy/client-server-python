@@ -6,12 +6,16 @@ from datetime import datetime, timedelta
 import random
 import string
 import hashlib
+import os
+
+from dotenv import load_dotenv
+load_dotenv()
 
 db = mysql.connector.connect(
-    host="localhost",
-    user="root",
-    password="g7KDhA123DyN",
-    database="registration_project"
+    host=os.getenv("DB_HOST"),
+    user=os.getenv("DB_USER"),
+    password=os.getenv("DB_PASSWORD"),
+    database=os.getenv("DB_NAME")
 )
 cursor = db.cursor(dictionary=True)
 sessions = {}
