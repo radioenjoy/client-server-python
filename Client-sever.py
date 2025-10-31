@@ -27,6 +27,7 @@ def generate_captcha():
     db.commit()
     return code
 
+
 def validate_captcha(code):
     cursor.execute("SELECT * FROM captcha WHERE captcha_code=%s AND is_used=FALSE", (code,))
     row = cursor.fetchone()
@@ -36,8 +37,9 @@ def validate_captcha(code):
         return True
     return False
 
+
 def hash_password(password):
-    return hashlib.sha256(password.encode()).hexdigest()
+    return password
 
 
 class MyHandler(BaseHTTPRequestHandler):
@@ -46,7 +48,10 @@ class MyHandler(BaseHTTPRequestHandler):
         cookie = self.headers.get('Cookie')
         if cookie and 'session_token=' in cookie:
             token = cookie.split('session_token=')[1]
-            cursor.execute("SELECT user_id FROM sessions WHERE session_token=%s AND expires_at > NOW()", (token,))
+            cursor.execute(
+                "SELECT user_id FROM sessions WHERE session_token=%s AND expires_at > NOW()",
+                (token,)
+            )
             row = cursor.fetchone()
             if row:
                 return row['user_id'], token
@@ -59,6 +64,7 @@ class MyHandler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header('Content-type', 'text/html; charset=utf-8')
             self.end_headers()
+
             if user_id:
                 cursor.execute("SELECT first_name, last_name, email FROM users WHERE id=%s", (user_id,))
                 user = cursor.fetchone()
@@ -156,11 +162,16 @@ class MyHandler(BaseHTTPRequestHandler):
             captcha_input = data.get('captcha', [''])[0]
 
             errors = []
-            if not first_name or not last_name: errors.append("Име и фамилия задължителни")
-            if "@" not in email: errors.append("Невалиден имейл")
-            if len(password) < 6: errors.append("Паролата трябва да е поне 6 символа")
-            if password != password2: errors.append("Паролите не съвпадат")
-            if not validate_captcha(captcha_input): errors.append("Невалидна CAPTCHA")
+            if not first_name or not last_name:
+                errors.append("Име и фамилия задължителни")
+            if "@" not in email:
+                errors.append("Невалиден имейл")
+            if len(password) < 6:
+                errors.append("Паролата трябва да е поне 6 символа")
+            if password != password2:
+                errors.append("Паролите не съвпадат")
+            if not validate_captcha(captcha_input):
+                errors.append("Невалидна CAPTCHA")
 
             self.send_response(200)
             self.send_header('Content-type', 'text/html; charset=utf-8')
@@ -185,7 +196,10 @@ class MyHandler(BaseHTTPRequestHandler):
             password = data.get('password', [''])[0]
             password_hash = hash_password(password)
 
-            cursor.execute("SELECT id FROM users WHERE email=%s AND password_hash=%s", (email, password_hash))
+            cursor.execute(
+                "SELECT id FROM users WHERE email=%s AND password_hash=%s",
+                (email, password_hash)
+            )
             user = cursor.fetchone()
 
             self.send_response(302 if user else 200)
@@ -219,8 +233,10 @@ class MyHandler(BaseHTTPRequestHandler):
             password2 = data.get('password2', [''])[0]
 
             errors = []
-            if not first_name or not last_name: errors.append("Име и фамилия задължителни")
-            if password and (len(password)<6 or password != password2): errors.append("Паролите не съвпадат или са твърде кратки")
+            if not first_name or not last_name:
+                errors.append("Име и фамилия задължителни")
+            if password and (len(password) < 6 or password != password2):
+                errors.append("Паролите не съвпадат или са твърде кратки")
 
             self.send_response(200)
             self.send_header('Content-type', 'text/html; charset=utf-8')
